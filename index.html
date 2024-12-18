@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Pass Manager</title>
+    <style>
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --accent: #6366f1;
+            --danger: #dc2626;
+            --success: #22c55e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--text-secondary);
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            margin-top: 0.5rem;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--accent);
+            color: var(--text-primary);
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .password-list {
+            display: grid;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .password-item {
+            background-color: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            display: grid;
+            gap: 0.5rem;
+            animation: slideIn 0.3s ease-in-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .duplicate-warning {
+            color: var(--danger);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .export-button {
+            background-color: var(--success);
+            margin-top: 1rem;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .search-bar {
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="toolbar">
+            <h1>Passwort Manager</h1>
+            <div class="search-bar">
+                <input type="text" placeholder="Suchen..." onkeyup="filterPasswords(this.value)">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="website" placeholder="Website">
+            <input type="text" id="username" placeholder="Benutzername">
+            <input type="password" id="password" placeholder="Passwort">
+            <button onclick="addPassword()">Hinzufügen</button>
+        </div>
+
+        <button class="export-button" onclick="exportPasswords()">Passwörter Exportieren</button>
+        <input type="file" id="importFile" style="display: none" onchange="importPasswords(this)">
+        <button class="export-button" onclick="document.getElementById('importFile').click()">Passwörter Importieren</button>
+
+        <div class="password-list" id="passwordList"></div>
+    </div>
+
+    <script>
+        let passwords = [];
+        const STORAGE_KEY = 'securePassManager';
+        
+        function loadPasswords() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                passwords = JSON.parse(stored);
+                renderPasswords();
+            }
+        }
+
+        function savePasswords() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(passwords));
+        }
+
+        function addPassword() {
+            const website = document.getElementById('website').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!website || !username || !password) {
+                alert('Bitte alle Felder ausfüllen');
+                return;
+            }
+
+            const isDuplicate = passwords.some(p => p.password === password);
+
+            passwords.push({
+                website,
+                username,
+                password,
+                isDuplicate,
+                dateAdded: new Date().toISOString()
+            });
+
+            updateDuplicateStatus();
+            savePasswords();
+            renderPasswords();
+            
+            // Clear inputs
+            document.getElementById('website').value = '';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+
+        function updateDuplicateStatus() {
+            const passwordCounts = {};
+            passwords.forEach(p => {
+                passwordCounts[p.password] = (passwordCounts[p.password] || 0) + 1;
+            });
+
+            passwords.forEach(p => {
+                p.isDuplicate = passwordCounts[p.password] > 1;
+            });
+        }
+
+        function renderPasswords(filterText = '') {
+            const list = document.getElementById('passwordList');
+            list.innerHTML = '';
+
+            const filteredPasswords = passwords.filter(p => 
+                p.website.toLowerCase().includes(filterText.toLowerCase()) ||
+                p.username.toLowerCase().includes(filterText.toLowerCase())
+            );
+
+            filteredPasswords.forEach((p, index) => {
+                const item = document.createElement('div');
+                item.className = 'password-item';
+                item.innerHTML = `
+                    <div>
+                        <strong>${p.website}</strong>
+                        ${p.isDuplicate ? '<span class="duplicate-warning">⚠️ Doppeltes Passwort</span>' : ''}
+                    </div>
+                    <div>Benutzername: ${p.username}</div>
+                    <div>Passwort: ${'•'.repeat(p.password.length)}</div>
+                    <div class="actions">
+                        <button onclick="togglePassword(this, '${p.password}')">Anzeigen</button>
+                        <button onclick="copyToClipboard('${p.password}')">Kopieren</button>
+                        <button onclick="deletePassword(${index})" style="background-color: var(--danger)">Löschen</button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function togglePassword(button, password) {
+            const passwordDiv = button.parentElement.previousElementSibling;
+            if (button.textContent === 'Anzeigen') {
+                passwordDiv.textContent = `Passwort: ${password}`;
+                button.textContent = 'Verbergen';
+                setTimeout(() => {
+                    passwordDiv.textContent = `Passwort: ${'•'.repeat(password.length)}`;
+                    button.textContent = 'Anzeigen';
+                }, 5000);
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Passwort wurde in die Zwischenablage kopiert');
+            });
+        }
+
+        function deletePassword(index) {
+            if (confirm('Möchten Sie dieses Passwort wirklich löschen?')) {
+                passwords.splice(index, 1);
+                updateDuplicateStatus();
+                savePasswords();
+                renderPasswords();
+            }
+        }
+
+        function filterPasswords(filterText) {
+            renderPasswords(filterText);
+        }
+
+        function exportPasswords() {
+            const dataStr = JSON.stringify(passwords, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            const exportName = 'passwords_' + new Date().toISOString().slice(0,10) + '.json';
+
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportName);
+            linkElement.click();
+        }
+
+        function importPasswords(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const importedPasswords = JSON.parse(e.target.result);
+                        passwords = importedPasswords;
+                        updateDuplicateStatus();
+                        savePasswords();
+                        renderPasswords();
+                        alert('Passwörter erfolgreich importiert');
+                    } catch (error) {
+                        alert('Fehler beim Importieren der Passwörter');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        // Load passwords when page loads
+        window.onload = loadPasswords;
+    </script>
+</body>
+</html>
