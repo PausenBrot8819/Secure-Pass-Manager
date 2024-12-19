@@ -6,87 +6,137 @@
     <title>Secure Pass Manager</title>
     <style>
         :root {
-            --bg-primary: #1a1a1a;
-            --bg-secondary: #2d2d2d;
-            --text-primary: #ffffff;
-            --text-secondary: #b3b3b3;
-            --accent: #6366f1;
-            --danger: #dc2626;
-            --success: #22c55e;
+            --bg-primary: #1e1e2e;
+            --bg-secondary: #2e2e3e;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a3a3b3;
+            --accent: #7c3aed;
+            --accent-hover: #5b21b6;
+            --danger: #ef4444;
+            --success: #10b981;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         body {
             background-color: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 2rem;
         }
 
-        .input-group {
-            margin-bottom: 1rem;
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: var(--bg-secondary);
+            border-radius: 1rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
         }
 
-        input {
-            width: 100%;
-            padding: 0.75rem;
+        .header {
+            background-color: var(--accent);
+            padding: 1.5rem;
+            text-align: center;
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
             background-color: var(--bg-primary);
+            border-bottom: 1px solid var(--text-secondary);
+        }
+
+        .toolbar input {
+            width: 100%;
+            max-width: 300px;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 0.5rem;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .toolbar input:focus {
+            outline: none;
+            background-color: var(--bg-primary);
+        }
+
+        .input-group {
+            display: grid;
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        .input-group input {
+            padding: 0.75rem;
             border: 1px solid var(--text-secondary);
             border-radius: 0.5rem;
+            background-color: var(--bg-primary);
             color: var(--text-primary);
-            margin-top: 0.5rem;
-            transition: border-color 0.2s;
         }
 
-        input:focus {
+        .input-group input:focus {
             outline: none;
             border-color: var(--accent);
         }
 
-        button {
-            width: 100%;
+        .input-group button {
             padding: 0.75rem;
             background-color: var(--accent);
-            color: var(--text-primary);
+            color: #fff;
             border: none;
             border-radius: 0.5rem;
             cursor: pointer;
-            transition: opacity 0.2s;
+            transition: background-color 0.2s;
         }
 
-        button:hover {
-            opacity: 0.9;
+        .input-group button:hover {
+            background-color: var(--accent-hover);
         }
 
         .password-list {
+            padding: 1rem;
             display: grid;
             gap: 1rem;
-            margin-top: 2rem;
         }
 
         .password-item {
-            background-color: var(--bg-secondary);
+            background-color: var(--bg-primary);
             padding: 1rem;
             border-radius: 0.5rem;
-            display: grid;
+            display: flex;
+            flex-direction: column;
             gap: 0.5rem;
-            animation: slideIn 0.3s ease-in-out;
+            position: relative;
         }
 
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
+        .password-item strong {
+            font-size: 1.2rem;
+            color: var(--text-primary);
+        }
+
+        .duplicate-warning {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            color: var(--danger);
+            font-size: 0.875rem;
+            font-weight: bold;
         }
 
         .actions {
@@ -94,36 +144,50 @@
             gap: 0.5rem;
         }
 
-        .duplicate-warning {
-            color: var(--danger);
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
+        .actions button {
+            padding: 0.5rem 1rem;
+            background-color: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .actions button:hover {
+            background-color: var(--accent-hover);
         }
 
         .export-button {
+            padding: 0.75rem;
             background-color: var(--success);
-            margin-top: 1rem;
+            color: #fff;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            margin: 1rem;
+            text-align: center;
         }
 
-        .toolbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
+        .export-button:hover {
+            background-color: #059669;
         }
 
-        .search-bar {
-            max-width: 300px;
+        .delete-button {
+            background-color: var(--danger);
+        }
+
+        .delete-button:hover {
+            background-color: #b91c1c;
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="header">Passwort Manager</div>
+
         <div class="toolbar">
-            <h1>Passwort Manager</h1>
-            <div class="search-bar">
-                <input type="text" placeholder="Suchen..." onkeyup="filterPasswords(this.value)">
-            </div>
+            <input type="text" placeholder="Suchen..." onkeyup="filterPasswords(this.value)">
         </div>
 
         <div class="input-group">
@@ -143,7 +207,7 @@
     <script>
         let passwords = [];
         const STORAGE_KEY = 'securePassManager';
-        
+
         function loadPasswords() {
             const stored = localStorage.getItem(STORAGE_KEY);
             if (stored) {
@@ -179,8 +243,7 @@
             updateDuplicateStatus();
             savePasswords();
             renderPasswords();
-            
-            // Clear inputs
+
             document.getElementById('website').value = '';
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
@@ -210,16 +273,14 @@
                 const item = document.createElement('div');
                 item.className = 'password-item';
                 item.innerHTML = `
-                    <div>
-                        <strong>${p.website}</strong>
-                        ${p.isDuplicate ? '<span class="duplicate-warning">⚠️ Doppeltes Passwort</span>' : ''}
-                    </div>
+                    <strong>${p.website}</strong>
+                    ${p.isDuplicate ? '<span class="duplicate-warning">⚠️ Doppeltes Passwort</span>' : ''}
                     <div>Benutzername: ${p.username}</div>
                     <div>Passwort: ${'•'.repeat(p.password.length)}</div>
                     <div class="actions">
                         <button onclick="togglePassword(this, '${p.password}')">Anzeigen</button>
                         <button onclick="copyToClipboard('${p.password}')">Kopieren</button>
-                        <button onclick="deletePassword(${index})" style="background-color: var(--danger)">Löschen</button>
+                        <button class="delete-button" onclick="deletePassword(${index})">Löschen</button>
                     </div>
                 `;
                 list.appendChild(item);
@@ -288,7 +349,6 @@
             }
         }
 
-        // Load passwords when page loads
         window.onload = loadPasswords;
     </script>
 </body>
